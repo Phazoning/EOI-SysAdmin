@@ -1,51 +1,62 @@
-# Bienvenida a la applicación de SHIELD para Admin-Sistemas
+This document assumes that we have already created a Vagrant Cloud account, 
+which we can access/create on the following link: https://app.vagrantup.com/account/new
 
-Pasos a seguir:
-1. Haz un fork del proyecto pulsando el botón fork en la pagina:
+Also, we will run this on an UNIX system. My personal recommendation is Ubuntu server.
+It lacks a visible interface (console only) but it's pretty lightweight (less than 2gb the last Long Term Support version)
+and, best of all, free
+
+
+Steps:
+
+1. Fork the project pressing the fork button on:
 
 ```
 https://github.com/aliciapj/shield
 ```
-Para que aparezca en nuestro repositorio de github una copia del proyecto.
 
-2. Descarga el proyecto del repo con git usando el comando:
+This way we'll have created our own copy of the project on our repository
+
+2. Download from your repository the contents using
 
 ```
-git clone git@github.com:AlpargataRauda/shield.git
+git clone git_clone_address
 ```
-Mientras estamos en una carpeta (si esta vacia mejor), que será desde donde trabajaremos.
 
-3. Crea un entorno virtual mediante:
+Where "git_clone_address" is the text which you can get selecting ssh at the code button.
+This will create a copy on the folder we have cd-ed to, so it is advisable it is empty
+
+3. Create a virtual environment using
 ```
 python3 -m venv .venv
 ```
 
-4. Activa el entorno virtual:
+4. Activate said virtual environment
 ```
 source .venv/bin/activate
 ```
 
-5. Instala las librerías del `requirements.txt` con:
+5. Install required libraries running
 ```
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
-6. Ejecuta las migraciones con:
+6. Execute migrations with
 ```
 python3 manage.py migrate
 ```
 
-7. Carga los datos de superheroes del fichero `superheroes.csv` usando el comando `metahumans/management/commands/load_from_csv.py`. Si os da problemas usando el comando load_from_csv, podéis usar el comando ``loaddata`` con el fichero `metahumans/fixtures/initial_data.json`. En nuestro caso usaremos:
+7. Load the data from `superheroes.csv` using `metahumans/management/commands/load_from_csv.py`. 
+   If you have problems running this command, run the following
 ```
 python3 manage.py loaddata metahumans/fixtures/initial_data.json
 ```
 
-8. Crea tu propio usuario superuser para poder entrar en el admin de django:
+8. Create your own django superuser:
 ```
 python3 manage.py createsuperuser
 ```
 
-9. Ejecuta el servidor de django para probar la aplicación, es recomendable hacer un check para ver que todo está correcto:
+9. Run the Django server to check on the app. It is advisable to run "check" first
 ```
 python3 manage.py check
 python3 manage.py runserver
@@ -53,41 +64,43 @@ python3 manage.py runserver
 
 ## Vagrant
 
-1. Abrimos una carpeta de vagrant en la carpeta de nuestro miniproyecto.
+1. We open a Vagrant folder on our clone
 ```
 vagrant init
 ```
 
-2. Aquí modificamos el vagrant file de forma que solo queden descomentadas las siguientes lineas:
+2. We modify our file so we have the following rows uncommented
 ```
 Vagrant.configure("2") do |config|
-config.vm.box = "hashicorp/bionic64"
+config.vm.box = "hashicorp/username"
   config.vm.network "forwarded_port", guest: 80, host: 8080
   config.vm.network "forwarded_port", guest: 5000, host: 5000
   config.vm.network "forwarded_port", guest: 8000, host: 8000
   config.vm.network "private_network", ip: "192.168.33.10"
   end
 ```
+username being our vagrant user name
 
-3. Comprobamos que todo va bien con ``vagrant up`` y haciendo un ``ssh "nuestra cuenta de vagrant"``.
-
-Esto será necesario para Fabric y Ansible.
+3. We check everything is alright running ``vagrant up`` and ``ssh vagrant_account``.
+Being vagrant_account our vagrant account
 
 ## Fabric 
 
-Pasos a seguir para abrir nuestro proyecto usando fabric:
+This steps are for setting up our project using fabric
 
-1. Primero descargaremos fabric en nuestro entorno virtual con:
+1. First, we will install fabric on our system running this command
 ```
 sudo apt install fabric
 ```
 
-2. Para crear el fabfile necesario para abrir nuestro proyecto, copiaremos gran parte del fabfile de django polls visto en clase, con ciertas excepciones que comentaremos a continuación:
+2. For our fabfile file, we'll use the original with some changes. It's found on
 ```
 REPO_URL = "https://github.com/aliciapj/shield.git"
 ```
-Ademas de las task que ya tiene el fabfile de django polls añadimos 2 más, un check y un runserver:
+Appart from the tasks that the django polls fabfile already has, we add two more, a check and a runserver:
 ```
+For a quicker reference, use the fabfile.py on this project
+
 @task
 def check(ctx):
     print("checking for issues...")
@@ -145,45 +158,44 @@ def deploy(ctx):
     runserver(conn)
 ```
 
-3. Ejecutamos esto con:
+3. We run this with:
 ```
 fab development deploy
 ```
-Ojo: Esto no lo hará a no ser que hayamos hecho un ``vagrant up`` antes. 
+CAUTION, this won't work unless we run ``vagrant up`` beforehand. 
 
-4. Luego, esto nos habrá creado una carpeta shield y un entorno virtual en nuestro servidor de vagrant. Si entramos en nuestro servidor, y dentro de aquí a la carpeta y al entorno virtual y ejecutamos el ``fab development deploy`` otra vez veremos como se despliega nuestro proyecto de shield.
-
-## Ansible 
+4. This will have created a shield  folder and a virtual environment on our vagrant server. If we get into our Vagrant server, and we go to the project folder and from there to the venv one,
+   and we run again ``fab development deploy`` we'll see how our project starts to be deployed
 
 ## Docker
 
-1. En un principio crearemos un dockerfile en la raiz de la carpeta de nuestro proyecto.
+1. We'll create a dockerfile (no extension) on our project root
 
-2. Nuestro dockerfile será igual que el dockerfile que hicimos en clase, con la diferencia que el WORKDIR será diferente.
+2. Our dockerfile will be as the provided, except changing the WORKDIR with
 ```
 WORKDIR /shield
 ```
 
-3. Con el comando: 
+3. Then we run: 
 ```
 docker build -t shield .
 ``` 
 
-Crearemos una imagen de docker del proyecto de shield.
+This will create a docker image of our project.
 
-4. Ahora que tenemos nuestra imagen generada podemos comprobar que está ahí con:
+4. With our image generated, we check it's there running:
 ```
 docker images
 ```
-Aquí veremos una imagen de shield, nuestro proyecto.
+Which will show an image of our project, shield
 
-5. Arrancaremos nuestro proyecto en nuestra red local con:
+5. Then we run our project on local with:
 ```
 docker run --publish 8000:8000 shield
 curl localhost:8000
 ```
 
-6. También podemos arrancarlo en segundo plano con:
+6. Or as a backtask with:
 ```
 docker run -d -p 8000:8000 shield
 curl localhost:8000
